@@ -1,0 +1,734 @@
+#+TITLE:     Demo Inferece Work
+#+AUTHOR: J. Roman Arguello
+#+EMAIL:     jacob.arguello@unilch
+#+DATE:      <2016-05-30>
+#+STARTUP: showall
+#+DESCRIPTION: Compuational analysis of DamID TaDa data
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+XSLT:
+#+BABEL: :session *R* :cache yes :exports both :tangle yes
+#+OPTIONS: ^:nil
+
+
+* Convert VCF to dadi format.
+
+- To start off with, we will only work with the 'neutral' class of
+  SNPs.
+- I am using Stefan's script to convert VCF to dadi format.
+- To get the ancestral state calls for each of these SNPs, I am using
+  the previously generated calls from our G3 paper.
+
+
+** Run python script modified from Stephan (vcf2dadi_GDL_Neutral_Class.py)
+- this will generate a 'dadi' formatted file, but w/out the ancestral
+  state calls. I extracted the ancetral states from the G3 paper.
+
+#+begin_src
+
+__author__ = 'stefan & roman'
+
+#Include third-party libraries
+import vcf
+import random
+
+#opening IO to the vcf file
+vcfIO = open("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites.vcf", 'r')  # Declare IO with vcf input
+#vcfIO = open("test.vcf", 'r')  # Declare IO with vcf input
+
+
+vcf_data = vcf.Reader(vcfIO)               # Declaring the vcf object (requires pyVCF module);
+
+#opening IO to output file
+output_file_name = "autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_dadi_input.txt"
+outIO = open(output_file_name,"w")
+
+
+#print calledBase.gt_type
+
+outIO.write("\t".join(["Dmel","AncState","Allele1","Bpop","Ipop","Npop","Tpop","Zpop","Allele2","Bpop","Ipop","Npop","Tpop","Zpop","Gene","Position\n"]))
+
+for variant in vcf_data:
+    #print variant
+    #Declare and re-initialize allele frequencies & missing data
+    B_freq_alt = 0
+    B_freq_ref = 0
+    B_miss = 0
+
+    I_freq_alt = 0
+    I_freq_ref = 0
+    I_miss = 0
+
+    N_freq_alt = 0
+    N_freq_ref = 0
+    N_miss = 0
+
+    T_freq_alt = 0
+    T_freq_ref = 0
+    T_miss = 0
+
+    Z_freq_alt = 0
+    Z_freq_ref = 0
+    Z_miss = 0
+    
+
+
+    for idx1,sampleCall in enumerate(variant.samples):
+
+        # Bpop
+        if idx1 >= 0 and idx1 < 15: 
+            if sampleCall.gt_type == None: #Count missing data
+                B_miss = B_miss + 1
+
+            if sampleCall.gt_type != None:
+                #print(sampleCall.gt_type)
+                
+                if (sampleCall.gt_type==2):
+                    B_freq_alt = B_freq_alt + 1 #Count number of alternate alleles in the Bpop sample
+                if(sampleCall.gt_type==1): # if the call is heterozygous then random choose one allele
+                    myG = [0,2] # the two possible genotype calls (homo ref = 0; homo alt = 2)
+                    myS = random.choice(myG) # choose 0 or 2 at radom
+
+                    if (myS == 2):
+                        #print("alt")
+                        B_freq_alt = B_freq_alt + 1 #Count number of alternate alleles in the Bpop sample
+
+
+        # Ipop
+        if idx1 >= 16 and idx1 < 34:
+            if sampleCall.gt_type == None:  #Count missing data
+                I_miss = I_miss + 1
+
+            if sampleCall.gt_type != None:
+
+                if (sampleCall.gt_type==2):
+                    I_freq_alt = I_freq_alt + 1 #Count number of alternate alleles in the Ipop sample
+                    
+                if(sampleCall.gt_type==1): # if the call is heterozygous then random choose one allele
+                    myG = [0,2] # the two possible genotype calls (homo ref = 0; homo alt = 2)
+                    myS = random.choice(myG) # choose 0 or 2 at radom
+
+                    if (myS == 2):
+                        I_freq_alt = I_freq_alt + 1 #Count number of alternate alleles in the Ipop sample
+
+        # Npop
+        if idx1 >= 34 and idx1 < 53:
+            if sampleCall.gt_type == None:  #Count missing data
+                N_miss = N_miss + 1
+
+            if sampleCall.gt_type != None:
+
+                if (sampleCall.gt_type==2):
+                    N_freq_alt = N_freq_alt + 1 #Count number of alternate alleles in the Npop sample
+                    
+                if(sampleCall.gt_type==1): # if the call is heterozygous then random choose one allele
+                    myG = [0,2] # the two possible genotype calls (homo ref = 0; homo alt = 2)
+                    myS = random.choice(myG) # choose 0 or 2 at radom
+
+                    if (myS == 2):
+                        N_freq_alt = N_freq_alt + 1 #Count number of alternate alleles in the Npop sample 
+            
+        # Tpop
+        if idx1 >= 53 and idx1 < 71:
+            if sampleCall.gt_type == None:  #Count missing data
+                T_miss = T_miss + 1
+
+            if sampleCall.gt_type != None:
+
+                if (sampleCall.gt_type==2):
+                    T_freq_alt = T_freq_alt + 1 #Count number of alternate alleles in the Tpop sample
+                    
+                if(sampleCall.gt_type==1): # if the call is heterozygous then random choose one allele
+                    myG = [0,2] # the two possible genotype calls (homo ref = 0; homo alt = 2)
+                    myS = random.choice(myG) # choose 0 or 2 at radom
+
+                    if (myS == 2):
+                        T_freq_alt = T_freq_alt + 1 #Count number of alternate alleles in the Tpop sample 
+            
+        # Zpop
+        if idx1 >= 71 and idx1 < 84:
+            if sampleCall.gt_type == None:  #Count missing data
+                Z_miss = Z_miss + 1
+
+            if sampleCall.gt_type != None:
+
+                if (sampleCall.gt_type==2):
+                    Z_freq_alt = Z_freq_alt + 1 #Count number of alternate alleles in the Zpop sample
+                    
+                if(sampleCall.gt_type==1): # if the call is heterozygous then random choose one allele
+                    myG = [0,2] # the two possible genotype calls (homo ref = 0; homo alt = 2)
+                    myS = random.choice(myG) # choose 0 or 2 at radom
+
+                    if (myS == 2):
+                        Z_freq_alt = Z_freq_alt + 1 #Count number of alternate alleles in the Zpop sample   
+        
+
+            
+            
+    #Calclate frequencies of the reference alleles (NOTE: this assumes a constant sample size (i.e. no missing data))
+    B_freq_ref = 15 - B_freq_alt - B_miss
+    I_freq_ref = 19 - I_freq_alt - I_miss
+    N_freq_ref = 19 - N_freq_alt - N_miss
+    T_freq_ref = 18 - T_freq_alt - T_miss
+    Z_freq_ref = 13 - Z_freq_alt - Z_miss
+
+    #B_freq_ref = 15 - B_freq_alt - B_miss
+    #I_freq_ref = 19 - I_freq_alt - I_miss
+    #N_freq_ref = 19 - N_freq_alt - N_miss
+    #T_freq_ref = 18 - T_freq_alt - T_miss
+    #Z_freq_ref = 13 - Z_freq_alt - Z_miss
+
+    
+    #print("-{0}-\t---\t{0}\t{2}\t{3}\t{4}\t{5}\t{6}\t{1}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\n".format(variant.alleles[0], variant.alleles[1],B_freq_ref,I_freq_ref,N_freq_ref,T_freq_ref,Z_freq_ref,B_freq_alt,I_freq_alt,N_freq_alt,T_freq_alt,Z_freq_alt, variant.CHROM,variant.POS))
+
+    outIO.write("-{0}-\t---\t{0}\t{2}\t{3}\t{4}\t{5}\t{6}\t{1}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\n".format(variant.alleles[0], variant.alleles[1],B_freq_ref,I_freq_ref,N_freq_ref,T_freq_ref,Z_freq_ref,B_freq_alt,I_freq_alt,N_freq_alt,T_freq_alt,Z_freq_alt, variant.CHROM,variant.POS))
+
+
+#+END_SRC
+
+
+-  Run the perl script to insert the ancestral state for each of these
+   SNP positions (input_ancestral_states.pl)
+
+- this will read in the 'dadi' formatted file from above, and then
+  fill in the ancestral state calls (column 2), by pulling them from
+  additional files.
+
+#+begin_src
+
+  #!/usr/bin/perl -w
+
+  open (IN, $ARGV[0]) || die("cant open dadi input file\n"); # open the dadi file w/out the ancestral state file
+
+  while (<IN>) {
+      if ($_ =~ m/Dmel/) {chomp; print "$_\n"; } # ignore the header and just print it to the new file
+      if (!($_ =~ m/Dmel/)) {
+          chomp;
+          @dat = split("\t",$_);
+
+          # get out the chr and position, which will be used to pull out the ancestral state (w/ awk, below)
+          $chr = $dat[-2];
+          $pos = $dat[-1];
+
+
+          # split up the chroms. here to run more quickly
+          if ($chr eq "2L") {
+              $AAfile = "/Volumes/Global_Diversity_Data/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr2L_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+          }
+          if ($chr eq "2R") {
+              $AAfile = "/Volumes/Global_Diversity_Data/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr2R_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+          }
+          if ($chr eq "3L") {
+              $AAfile = "/Volumes/Global_Diversity_Data/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr3L_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+          }
+          if ($chr eq "3R") {
+              $AAfile = "/Volumes/Global_Diversity_Data/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr3R_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+          }
+          if ($chr eq "4") {
+              $AAfile = "/Volumes/Global_Diversity_Data/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr4_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+          }
+
+
+          # use awk to pull out the ancestral state
+          $com = "awk '{if (\$1==$pos) {print \$4; exit}}' $AAfile";
+          #print $com, "\n";
+          $AS = `$com`;
+          chomp $AS;
+
+          # error out if there is not data for this variable site <- shouln't happen!
+          if (length($AS) < 1) {
+              die("no anc. state: $chr\t$pos\n");
+          }
+
+          # fiddle w/ format
+          $AS = "-$AS-";
+          #print "--- ", $AS, "\n";
+
+          $dat[1] =  $AS;
+          print join("\t", @dat), "\n";
+
+      }
+
+  }
+
+
+
+
+#+end_src
+
+
+- I am manually removing the lines with the chr4 SNPs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+* Examing the number of SNPs available when 'projecting' down to different sample sizes.
+
+- Using dadi to calculate the number of snps for the projections
+
+
+#+begin_src
+import dadi
+import matplotlib.pyplot as pyplot
+
+
+# sample sizes, orders:
+#(1) 15: Beijing (B)
+#(2) 19: Ithaca (I)
+#(3) 19: Netherlands (N)
+#4) 18: Tasmania (T)
+#(5) 13: Zimbabwe (Z)
+
+for x in range(1, 31):
+
+    #Load data into object of class data_dict
+    #snp_data =  dadi.Misc.make_data_dict("test_dadi_input.txt")
+    snp_data =  dadi.Misc.make_data_dict("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_polarized_dadi_input.txt")
+    fs= dadi.Spectrum.from_data_dict(snp_data, pop_ids=['Bpop','Ipop','Npop','Tpop','Zpop'], projections=[x,1,1,1,1],polarized=True)
+
+    # marginalize
+    fs_B = fs.marginalize([1,2,3,4])
+    fs_I = fs.marginalize([0,2,3,4])
+    fs_N = fs.marginalize([0,1,3,4])
+    fs_T = fs.marginalize([0,1,2,4])
+    fs_Z = fs.marginalize([0,1,2,3])
+
+
+    S_B = fs_B.S()
+    print("Bpop {0}\t{1}".format(x,S_B))
+
+#+end_src
+
+- running them in the background:
+
+#+begin_src
+
+python Bpop_Srange.py > Bpop_Proj_Range.txt &
+python Ipop_Srange.py > Ipop_Proj_Range.txt &
+python Npop_Srange.py > Npop_Proj_Range.txt &
+python Tpop_Srange.py > Tpop_Proj_Range.txt &
+python Zpop_Srange.py > Zpop_Proj_Range.txt &
+
+#+end_src
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+* Get the total number of 'nutral' sites in the genome that were callable
+
+** Get the total number of 4D sites that are callable
+
+- To get the 4D positions, I have the VCF files w/ 'fake SNPs' anotated
+and can search for the 'A,V,T,G':
+
+
+- I am going to get rid of the chr4 SNPS, so am not counting them
+  here.
+
+- (Got rid of chr4 SNPs from dadi outputted info file)
+
+#+begin_src
+
+awk '{if ($16 == "A/A" || $16 == "P/P" || $16 == "V/V" || $16 =="T/T" || $16 == "G/G" ) {print $1"\t"$2"\t"$2} }' /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/2L_v5_34_Full_Annotaion.out > /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/2L_v5_34_Full_Annotaion_4D.txt  &  
+awk '{if ($16 == "A/A" || $16 == "P/P" || $16 == "V/V" || $16 =="T/T" || $16 == "G/G" ) {print $1"\t"$2"\t"$2} }' /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/2R_v5_34_Full_Annotaion.out > /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/2R_v5_34_Full_Annotaion_4D.txt &
+awk '{if ($16 == "A/A" || $16 == "P/P" || $16 == "V/V" || $16 =="T/T" || $16 == "G/G" ) {print $1"\t"$2"\t"$2} }' /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/3L_v5_34_Full_Annotaion.out > /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/3L_v5_34_Full_Annotaion_4D.txt &
+awk '{if ($16 == "A/A" || $16 == "P/P" || $16 == "V/V" || $16 =="T/T" || $16 == "G/G" ) {print $1"\t"$2"\t"$2} }' /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/3R_v5_34_Full_Annotaion.out > /Volumes/Global_Diversity_Data/SNPcalls/IBD_Masked/SNPeff_annotations_full_genome/3R_v5_34_Full_Annotaion_4D.txt  &
+
+
+less 2L_v5_34_Full_Annotaion_4D.txt | uniq > 2L_v5_34_Full_Annotaion_4D_uniq.bed &
+less 2R_v5_34_Full_Annotaion_4D.txt | uniq > 2R_v5_34_Full_Annotaion_4D_uniq.bed &
+less 3L_v5_34_Full_Annotaion_4D.txt | uniq > 3L_v5_34_Full_Annotaion_4D_uniq.bed &
+less 3R_v5_34_Full_Annotaion_4D.txt | uniq > 3R_v5_34_Full_Annotaion_4D_uniq.bed &
+
+intersectBed -a 2L_v5_34_Full_Annotaion_4D_uniq.bed -b /Volumes/Global_Diversity_Data/obesity_masks/callability_masks/whole_genome_masked_intervals.bed -v > 2L_v5_34_Full_Annotaion_4D_uniq_callable.bed &
+intersectBed -a 2R_v5_34_Full_Annotaion_4D_uniq.bed -b /Volumes/Global_Diversity_Data/obesity_masks/callability_masks/whole_genome_masked_intervals.bed -v > 2R_v5_34_Full_Annotaion_4D_uniq_callable.bed &
+intersectBed -a 3L_v5_34_Full_Annotaion_4D_uniq.bed -b /Volumes/Global_Diversity_Data/obesity_masks/callability_masks/whole_genome_masked_intervals.bed -v > 3L_v5_34_Full_Annotaion_4D_uniq_callable.bed &
+intersectBed -a 3R_v5_34_Full_Annotaion_4D_uniq.bed -b /Volumes/Global_Diversity_Data/obesity_masks/callability_masks/whole_genome_masked_intervals.bed -v > 3R_v5_34_Full_Annotaion_4D_uniq_callable.bed &
+
+#+end_src
+
+
+| chrom file                          | Positions |
+|-------------------------------------+-----------|
+| 2L_v5_34_Full_Annotaion_4D_uniq.bed |    430544 |
+| 2R_v5_34_Full_Annotaion_4D_uniq.bed |    448892 |
+| 3L_v5_34_Full_Annotaion_4D_uniq.bed |    451254 |
+| 3R_v5_34_Full_Annotaion_4D_uniq.bed |    558871 |
+|-------------------------------------|-----------|
+| Total                               |   1889561 |
+
+
+
+** Get the total number of small introic positions that are callable
+
+
+#+begin_src
+T<-read.table("Dmel_introns_dedicated_no_overlappers2.txt")
+yo<-which(T[,1]== "chr2RHet" | T[,1]==  "chr2LHet" | T[,1]==  "chr3LHet" | T[,1]==  "chr3RHet" | T[,1]==  "chrU" |  T[,1]==  "chrXHet" |  T[,1]==  "chrYHet" |  T[,1]==  "chr4" | T[,1]==  "chrX")
+T.auto<-T[-yo,]
+unique(as.vector(T.auto[,1]))
+write.table(T.auto,"Dmel_introns_dedicated_no_overlappers2_chr2L2R3L3R_only.bed", sep="\t",quote=FALSE,row.names=FALSE,col.names=FALSE)
+sum(T.auto[,4])
+#+end_src
+
+- The total number BEFORE callablity mask: 895361
+
+- Get only the callable introns:
+#+begin_src
+intersectBed -a Dmel_introns_dedicated_no_overlappers2_chr2L2R3L3R_only.bed -b /Volumes/Global_Diversity_Data/obesity_masks/callability_masks/whole_genome_masked_intervals.bed
+-v > Dmel_introns_dedicated_no_overlappers2_chr2L2R3L3R_only_Callable.bed
+#+end_src
+
+#+begin_src R
+T<-read.table("Dmel_introns_dedicated_no_overlappers2_chr2L2R3L3R_only_Callable.bed")
+sum(T[,4])
+#+end_src
+
+- The total number AFTER callablity mask: 883995
+
+
+- Total 'Neutral SNPs' (small intronic + 4d positions) for chr2L, 2R, 3L, 3R = 167502
+- Total positions =  883995 + 1889561 = 2773556
+- fraction variant = 167502/2773556 = 0.06039251
+
+
+- To get the number of segregating sites w/in Zpop after projecting down, I ran the
+  "Zpop_Srange.py" script:    S = 99162.1538462
+
+
+- So the # of monomorphic = 2773556 - 99162 = 2763640
+
+- NOTE: on the first pass I mistakenly put the number of small
+  intronic SNPs available (883995) as the total monomorphic
+  class. this is not fixed! [2017-02-25 Sat]
+
+
+
+* using Dadi to work w/ SFS
+
+- outputting sum stats and SFS using the scripts: Pop_SumStats.py,
+  Joint_SFS_Neth_Zimb_dadi.py
+
+* Launching FastSimCoal jobs
+
+- modify the 'Generic names' section of the
+  "launch_fs_oneData_cluster.sh" shell script
+
+- launch the jobs by entering
+
+#+begin_src
+bash launch_fs_oneData_cluster.sh dro04
+#+end_src
+
+# ######################################################
+
+
+* Generate JSFS in dadi for "obs" file w/in FastSimCoal
+
+- I am using the following scripts to generate the JSFS:
+  - Joint_SFS_Neth_Zimb_dadi.py
+  - Joint_SFS_Neth_Ithaca_Zimb_dadi.py
+  -  <2017-01-05 Thu 12:32> Joint_SFS_Neth_Zimb_Beijing_dadi.py
+
+- <2017-01-19 Thu 10:47> In talking w/ Sefan yesterday I realized I
+  was making an error by adding the monomorphic sitest to the
+  outputted dadi file instead of replacing the first number with the
+  total number of monomorphic sites. I have corrected that now. I am
+  check that the marganized SFS for the 2 pop file is correct
+
+#+begin_src R
+T<-read.table("N_Z_DSFS.obs",skip=2)
+# 2 pops
+# pop 1 sample size = 14
+# pop 2 sample size = 12
+
+Tmat<-matrix(T,ncol=15)
+
+
+# plot the margainalized SFS for pop 0 = zimbabwe
+barplot(t(as.matrix(Tmat[2:13,1])))
+
+# plot the margainalized SFS for pop 1 = netherlands
+barplot(t(as.matrix(Tmat[1,2:15])))
+#+end_src
+
+- <2017-01-19 Thu 10:47> Replacing the .obs files for the 2pop models
+  (models 4,5,6) and rerunning them.
+
+
+
+# ######################################################
+
+
+* Number of segregating sites for the various population combinations:
+
+- For the SFS_N_Z, the number of segregating sites: 114957.856248
+  - The number of monomorphic sites is: 2773556 - 114957.856248 = 2,658,598
+
+- For the SFS_N_I_Z, the number of segregting sites: 125909.231254
+  - The number of monomorphic sites is: 2773556 - 125909.231254 =
+    2,647,647
+  - The sample size and order of popultions for this SFS is: 17 15 13;
+    "Ipop" "Npop" "Zpop"
+  - Name of file in FastSimCoal format in Dropbox: N_I_Z_DSFS.obs
+
+- For the SFS_B_N_Z, the number of segregting sites: 123227.03785
+  - The number of monomorphic sites is: 2773556 - 123227.03785 =
+    2,650,329
+  - The sample size and order of popultions for this SFS is: 14 15 13;
+    "Bpop" "Npop" "Zpop"
+  - Name of file in FastSimCoal format in Dropbox: B_N_Z_DSFS.obs
+
+
+
+
+
+
+# ######################################################
+* inspecting the high freq. derived SNPs
+
+- I am outputting the positions that are high freq. derived in the
+  Zpopulation from the dadi input file (get_HigFreqDerPos.R).
+
+#+begin_src
+ 
+# read in the dadi table
+T<-read.table("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input.txt", header=TRUE)
+
+# get the anc. state
+Tanc<-as.vector(T[,2])
+Tanc<-gsub("-", "", Tanc) # get rid of dashes
+Tanc.indic<-as.numeric(Tanc[] == T[,3]) # which sites have allele 1 as the ancestral (yes = 1)
+Tanc.indic[which(Tanc.indic==1)] <- 14 # if ancestral state is allele 1, then get derived alelle for Zpop column (14) 
+Tanc.indic[which(Tanc.indic==0)] <- 8 # if ancestral state is allele 2, then get derived alelle for Zpop column (8)
+
+# make matrix to fill
+OUT<-matrix(data=NA,nrow=0,ncol=4)
+colnames(OUT)<-c("chr","start","end","freq")
+
+
+for (i in 1:length(Tanc.indic)) { # loop over the positions
+  if (T[i,Tanc.indic[i]] >= 8) { # get those positions that are segregating at high numbers
+    #print(paste(T[i,15], T[i,16], T[i,16], (T[i,Tanc.indic[i]]/13),  sep = "\t"))
+    OUT<-rbind(OUT,c(as.character(T[i,15]), T[i,16], T[i,16], (T[i,Tanc.indic[i]]/13))) # put them in the matrix in bed format
+  }
+}
+
+# write to file
+write.table(OUT, "autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_HiFreqDerived.bed", quote=FALSE, sep="\t", row.names=FALSE)
+
+
+ 
+#+end_src
+
+- This results in a bed file, that I can then intersect w/ the
+  alignment file containing the posterior prob. of ancestarl states.
+
+
+#+begin_src
+
+intersectBed -a ~/Dropbox/fly_demo/autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_HiFreqDerived.bed -b autosomes_IBD_masked_biallelic_ZW184removed_AncDer_States.bed -wao > ~/Dropbox/fly_demo/autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_HiFreqDerived_PostProb.bed
+
+#+end_src
+
+
+- get only those perfectly overlapping post. prob. calls (clean_postprob_table.R)
+
+#+begin_src
+
+# read in the post. prob. table
+T<-read.table("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_HiFreqDerived_PostProb.bed", header=FALSE)
+
+# get only those sites that overlapp exactly (not +/- 1bp)
+T<-T[which(T[,2]==T[,6] & T[,3]==T[,7]),]
+
+# write to file
+write.table(T, "autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_HiFreqDerived_PostProb_Cleaned.bed", quote=FALSE, sep="\t", row.names=FALSE)
+
+# plot
+plot(hist(T[,10]),xlab="Post. Prob.",main="Post. Prob. for\nHigh Freq. Derived SNPs\nZimbabwe",col="darkgrey")
+
+
+#+end_src
+
+
+#+CAPTION: Posterior Prob. on High Freq. Derived SNPs
+#+NAME:   fig:SED-HR4049
+ [[/Users/uncleneptune/Dropbox/fly_demo/PostProb_HiFreqDerived.png]]
+
+
+
+
+
+
+# ######################################################
+* Correcting the SFS
+
+
+- I am splitting up the dadi file in order to make appendi the
+  posterior call on the ancestral state quicker:
+
+
+#+begin_src
+split autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input2L.txt chr2L_
+split autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input2R.txt chr2R_
+split autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input3L.txt chr3L_
+split autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input3R.txt chr3R_
+#+end_src
+
+- Run the "dadi_with_postprob_anc.pl" script on all the files in the respective
+  directory using "batch_append.pl":
+
+#+begin_src
+clear; perl batch_append.pl &
+#+end_src
+
+
+- this calls on the script that will append the post. prob. column
+  ("dadi_with_postprob_anc.pl")
+
+
+#+begin_src
+#!/usr/bin/perl -w -I/Users/uncleneptune/perl5/lib/perl5/darwin-thread-multi-2level/
+
+# which chromosome? (2L, 2R, 3L, 3R)
+$w_chrom = $ARGV[0];
+
+# provide file and path info
+open (IN1, "<", $ARGV[1]) || die("cant open dadi file\n"); # open dadi file
+
+# make new ouptput file
+$outfile = $ARGV[1];
+$outfile = $outfile .'_'. $w_chrom;
+
+open (OUT, ">", $outfile) || die("cant open metagene output file\n");
+
+
+while (<IN1>) { # loop over dadi file to get out the chrom and position
+    chomp $_;
+    @dat = split("\t", $_);
+    $chr = $dat[-2];
+    $pos = $dat[-1];
+    print $chr, "\t", $pos, "\n";
+    
+    if ($dat[0] eq "Dmel") {  # print the header to the new file
+        print OUT join("\t", @dat[0..15]),"\tProbDerAlelles\n";
+    }
+    
+    if ($dat[0] ne "Dmel") { # skip the header
+
+        $com = "awk \'{if (\$1==$pos) {print \$0; exit}}\'  /Volumes/Passport/multi_species_aln/Ancestral_States_for_Fully_Masked_VCFs/chr" .''. $w_chrom .''. "_IBD_masked_biallelic_ZW184removed_AncDer_States.txt";
+        $postprob_info = `$com`;
+        @pi = split("\t", $postprob_info);
+        $PostProb = $pi[-1];
+        chomp $PostProb;
+
+        if ($PostProb eq "NA") {
+            $PostProb = 1; # leave the ancestral call as is
+        }
+
+        # output to new file
+        print OUT join("\t", @dat[0..15]), "\t", $PostProb ,"\n";
+        
+    }
+}
+
+
+close (IN1);
+#+end_src
+
+
+** TODO I need to merge all of these files 
+** TODO I need to modify my existing script so that I re-generate the 'normal' dadi file with 'flipped' freqeuncies based on these probs.
+
+
+
+# ######################################################
+
+
+# ######################################################
+
+* predictive simulations
+
+- we need to have set values to simulate under. in the *.par files
+  (bottom) they are specified: "//per Block: data type, num loci,
+  rec. rate and mut rate + optional parameters"
+  - for the data type = DNA
+  - for the num loci = 2773556
+  - for the rec. rate = average value of cameron's data from the
+    Drosophila melanogaster Recombination Rate Calculator (RRC)
+    Version 2.3 = 2.2e-08
+
+#+begin_src R
+ mean(c(2.39,2.66,1.79,1.96)) * 10^(-8) 
+#+end_src
+  
+  - for the mut rate = 1.3e-9 from Stefan's paper
+
+
+# ######################################################
+
+* Trouble shooting
+
+- <2017-01-02 Mon 15:02> Of the 20 replicates that I generated, 9 errored out (ls
+  run*/dro05/*bad*). Not sure why,
+  but I am going to generate 20 more, which will hopefully result in 9
+  successful runs that I can replace these with (not sure this is the
+  way to go moving forward though).
+
+- <2017-01-02 Mon 15:46> It seems that the historical events for dro04
+  and dro05 only have 6 numbers when they should have 7. The previous
+  historical event for dro04 was:
+  
+  1 historical event
+
+  T_SPL_NETH 1 0 1 0 0
+
+  Now it is:
+  
+  1 historical event
+  
+  T_SPL_NETH 0 1 1 1 0 0
+
+  And nearly the same for dro05 (now dro05: T_SPL_NETH 0 1 1 1 0 1)
+
+
+# ######################################################
