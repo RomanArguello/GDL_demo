@@ -273,23 +273,26 @@ for variant in vcf_data:
 
 
 
-
-
-
-
-
-
-
-
-
 * Examing the number of SNPs available when 'projecting' down to different sample sizes.
 
-- Using dadi to calculate the number of snps for the projections
+
+<2017-03-09 Thu> UPDATE: I am using the dadi input file for only those
+SNPs that have > 95 post. prob. calls for ancestral states
+(autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95.txt)
+
+- the python scripts for this are:
+ - Bpop_Srange.py
+ - Ipop_Srange.py
+ - Npop_Srange.py
+ - Tpop_Srange.py
+ - Zpop_Srange.py
+
+- Using dadi to calculate the number of snps for the projections:
 
 
 #+begin_src
 import dadi
-import matplotlib.pyplot as pyplot
+import matplotlib.pyplot as pyplot #only if you want ti use the plotting function
 
 
 # sample sizes, orders:
@@ -299,12 +302,11 @@ import matplotlib.pyplot as pyplot
 #4) 18: Tasmania (T)
 #(5) 13: Zimbabwe (Z)
 
-for x in range(1, 31):
+for x in range(1, 14):
 
     #Load data into object of class data_dict
-    #snp_data =  dadi.Misc.make_data_dict("test_dadi_input.txt")
-    snp_data =  dadi.Misc.make_data_dict("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_polarized_dadi_input.txt")
-    fs= dadi.Spectrum.from_data_dict(snp_data, pop_ids=['Bpop','Ipop','Npop','Tpop','Zpop'], projections=[x,1,1,1,1],polarized=True)
+    snp_data     =  dadi.Misc.make_data_dict("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95.txt")
+    fs= dadi.Spectrum.from_data_dict(snp_data, pop_ids=['Bpop','Ipop','Npop','Tpop','Zpop'], projections=[1,1,1,1,x],polarized=True)
 
     # marginalize
     fs_B = fs.marginalize([1,2,3,4])
@@ -314,8 +316,9 @@ for x in range(1, 31):
     fs_Z = fs.marginalize([0,1,2,3])
 
 
-    S_B = fs_B.S()
-    print("Bpop {0}\t{1}".format(x,S_B))
+    S_Z = fs_Z.S()
+    print("Zpop {0}\t{1}".format(x,S_Z))
+
 
 #+end_src
 
@@ -332,6 +335,10 @@ python Zpop_Srange.py > Zpop_Proj_Range.txt &
 #+end_src
 
 
+- NOTE: after updating the dadi input file with only the >95%
+  post. prob. calls, the sample size to maximaze the projections
+  remains the same as with the previous file containig all SNPs
+  (ProjectionValues.xlsx)
 
 
 
@@ -434,11 +441,11 @@ sum(T[,4])
   "Zpop_Srange.py" script:    S = 99162.1538462
 
 
-- So the # of monomorphic = 2773556 - 99162 = 2763640
+- So the # of monomorphic = 2773556 - 99162 = 2674394
 
 - NOTE: on the first pass I mistakenly put the number of small
   intronic SNPs available (883995) as the total monomorphic
-  class. this is not fixed! [2017-02-25 Sat]
+  class. this is now fixed! [2017-02-25 Sat]
 
 
 
@@ -458,12 +465,25 @@ sum(T[,4])
 bash launch_fs_oneData_cluster.sh dro04
 #+end_src
 
+
+- extracting out the best likelihood
+#+begin_src
+bash FindBestRun.sh dro01 2
+bash FindBestRun.sh dro02 9
+bash FindBestRun.sh dro03 5
+bash FindBestRun.sh dro04 16
+bash FindBestRun.sh dro05 18
+bash FindBestRun.sh dro06 19
+#+end_src
+
+
 # ######################################################
 
 
 * Generate JSFS in dadi for "obs" file w/in FastSimCoal
 
 - I am using the following scripts to generate the JSFS:
+  - estimate_corrected_SFS_Zpop.py
   - Joint_SFS_Neth_Zimb_dadi.py
   - Joint_SFS_Neth_Ithaca_Zimb_dadi.py
   -  <2017-01-05 Thu 12:32> Joint_SFS_Neth_Zimb_Beijing_dadi.py
@@ -500,23 +520,25 @@ barplot(t(as.matrix(Tmat[1,2:15])))
 
 * Number of segregating sites for the various population combinations:
 
-- For the SFS_N_Z, the number of segregating sites: 114957.856248
-  - The number of monomorphic sites is: 2773556 - 114957.856248 = 2,658,598
+- In an effort to not bias diversity after removing the sites where
+  post. prob. on ancestral calls was < 95, we are removing the
+  proportional number of sites from the data set (the total number of
+  'neutral positions').  
 
-- For the SFS_N_I_Z, the number of segregting sites: 125909.231254
-  - The number of monomorphic sites is: 2773556 - 125909.231254 =
-    2,647,647
-  - The sample size and order of popultions for this SFS is: 17 15 13;
-    "Ipop" "Npop" "Zpop"
-  - Name of file in FastSimCoal format in Dropbox: N_I_Z_DSFS.obs
+- To do this we are simply keeping the ratio constant:
+  - Total #  of 'neutral SNPS * (# of SNPs after 95% cut off / # of
+    SNPs from total data set)
+  - 2773556 * (85361/99164) = 2387495 = Total # of sites 
 
-- For the SFS_B_N_Z, the number of segregting sites: 123227.03785
-  - The number of monomorphic sites is: 2773556 - 123227.03785 =
-    2,650,329
-  - The sample size and order of popultions for this SFS is: 14 15 13;
-    "Bpop" "Npop" "Zpop"
-  - Name of file in FastSimCoal format in Dropbox: B_N_Z_DSFS.obs
 
+| SFS data set  | Script                              |     Seg. Sites | Total Sites | Monomorphic |
+|---------------+-------------------------------------+----------------+-------------+-------------|
+| SFS_Z.txt     | SFS_Zimb_dadi.py                    |  99162.1538462 |     2773556 |     2674394 |
+| SFS_N_Z.txt   | Joint_SFS_Neth_Zimb_dadi.py         |  114957.856248 |     2773556 |     2658598 |
+| SFS_B_N_Z.txt | Joint_SFS_Neth_Zimb_Beijing_dadi.py |   123227.03785 |     2773556 |     2650329 |
+| SFS_N_I_Z.txt | Joint_SFS_Neth_Ithaca_Zimb_dadi.py  | 125909.2312545 |     2773556 |     2647647 |
+|               |                                     |                |             |             |
+|---------------+-------------------------------------+----------------+-------------+-------------|
 
 
 
@@ -676,9 +698,110 @@ close (IN1);
 #+end_src
 
 
-** TODO I need to merge all of these files 
-** TODO I need to modify my existing script so that I re-generate the 'normal' dadi file with 'flipped' freqeuncies based on these probs.
 
+-merge all of these files 
+
+#+begin_src
+cat chr2R*_2R > autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_postprob_input2R.txt
+cat chr2L*_2L > autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_postprob_input2L.txt
+cat chr3R*_3R > autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_postprob_input3R.txt
+cat chr3L*_3L > autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_postprob_input3L.txt
+
+cat  */*postprob*.txt > autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc.txt
+#+end_src
+
+- manually added header to this new 'dadi-like' file
+- note that this will automatically exclude chr4 SNPs
+
+- I wrote a perl script that will 'correct' the SFS from the dadi-like
+  file w/ anc. state probs. ("correct_SFS.pl")
+- I also wrote a batch script ("batch_correct_SFS.pl") that will do
+  this over replicates and the generate SFS for each iteration using
+  ("compute_SFS_from_dadi_file.pl"). This is currently only getting
+  the SFS for the Zpop.
+- I then plot this using ("plot_SFS_from_dadi_file.R"), with the
+  non-manipulated SFS as black points.
+
+- I zipped up the intermediate files for generating this appended dadi
+  files in: temp_dir_for_appending_postprob_ancestral_states.zip
+
+
+#+CAPTION: SFS and error 'correcting' ancestral state calls (n=500)
+#+NAME:   fig:SED-HR4049
+ [[/Users/uncleneptune/Dropbox/fly_demo/Corrected_SFS_n500.png]]
+
+
+
+- I am having a look at the relation ship between SNP class and
+  post. prob. call ("plot_SNPclass_AncProb.R")
+
+
+#+begin_src
+
+require(plotrix)
+require(ggplot2)
+
+
+O<-matrix(data=NA,ncol=3,nrow=13)
+colnames(O)<-c("Mean","SE")
+
+T<-read.table("SNPclass_AncProb.txt")
+colnames(T)<-c("SNP.class","Prob")
+#T<-as.data.frame(T)
+
+for (i in 1:13) {
+  print(mean(T[which(T$SNP.class==i),2]))
+  print(std.error(T[which(T$SNP.class==i),2]))
+  O[i,1]<-i
+  O[i,2]<-mean(T[which(T$SNP.class==i),2])
+  O[i,3]<-std.error(T[which(T$SNP.class==i),2])
+}
+
+O<-as.data.frame(O)
+colnames(O)<-c("SNP.Class","Post.Prob","SE")
+
+p<-ggplot(O, aes(x = factor(SNP.Class), y = Post.Prob)) +  geom_point(position = position_dodge(),stat="identity",fill="grey")
+p<-p + ylim(0, 1)
+p<-p+geom_errorbar(aes(ymin=Post.Prob-SE, ymax=Post.Prob+SE),col="red") + theme_bw()
+p<-p+ ylab(c("Mean of the posterior prob. on ancestral stat call")) + xlab(c("SNP Class"))
+p
+
+
+#+end_src
+
+
+#+CAPTION: Posterior probability of ancestral state calls decrease with frequency 
+#+NAME:   fig:SED-HR4049
+ [[/Users/uncleneptune/Dropbox/fly_demo/SNPclass_AncProb.png]]
+
+- There is a relationship between the frequency of the SNP and the
+  posterior probability of the anestral state call. So what does the
+  SFS look like when you get rid of positions with 'low' prob. calls.
+  I am plotting the SFS for Zpop with only call >= 95% 
+
+
+- making a dadi table w/ this subset of sites
+#+begin_src R
+T<-read.table("autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc.txt",header=TRUE)
+
+T.hc<-T[which(T[,17]>=0.95),]
+
+write.table(T.hc[1:16], "autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95.txt", sep="\t",row.names=FALSE,quote=FALSE)
+#+end_src
+  
+
+- plotting it wit "plot_SFS_from_dadi_file.R"
+#+CAPTION: SFS (w/out monomorphic class) for the unaltered dadi file and the dadi file with only high-confidence high-freq. derived SNPs (>95)
+#+NAME:   fig:SED-HR4049
+ [[/Users/uncleneptune/Dropbox/fly_demo/Corrected_SFS_pp95.png]]
+
+
+
+- Sample size in the original dadi file = 167,502
+- Sample size in the gt95 dadi file = 144,698
+- kept 0.8638583 of the data; lost 0.1361417 of the data
+
+- after projecting: 87,191
 
 
 # ######################################################
@@ -697,11 +820,212 @@ close (IN1);
     Drosophila melanogaster Recombination Rate Calculator (RRC)
     Version 2.3 = 2.2e-08
 
-#+begin_src R
+#+begin_src 
  mean(c(2.39,2.66,1.79,1.96)) * 10^(-8) 
 #+end_src
   
   - for the mut rate = 1.3e-9 from Stefan's paper
+
+- command to find the run w/ the best likelihood:
+
+
+#+begin_src 
+grep -Ril "271966.649"  run*/dro02/*.bestlhoods # for the unaltered SFS before remove low conf. post. prob. anc. calls = run8
+
+grep -Ril "233095.155"  run*/dro02/*.bestlhoods # for the reduced dataset w/ post. prob. anc. calls > 95% = run13
+
+grep -Ril "353456.954"  run*/dro06/*.bestlhoods # for the reduced dataset w/ post. prob. anc. calls > 95% = run12
+#+end_src
+
+
+- simulate under the best model
+#+begin_src
+bsub < launch_fastsimcoal2.sh
+#+end_src
+
+
+- plotting the data
+
+
+#+begin_src
+cat pred_sims_1pop_model02_reduced_dataset/dro02_maxL/dro02_maxL_DSFS_dadi.obsSFS pred_sims_1pop_model02_reduced_dataset_2/dro02_maxL/dro02_maxL_DSFS_dadi.obsSFS > pred_sims_1pop_model02_reduced_1K/dro02_maxL_DSFS_dadi.obsSFS
+#+end_src
+
+- manually added "1 12" to head of the above DSFS file
+
+
+
+# ######################################################
+
+* population clustering using DAPC
+
+- first need to generate "snp" formated file for adegenet. I have a
+  script to convert VCF file to this 'snp' format.
+
+- since we are using only a subset of the 'netural' SNPs, i need to
+  generate a reduced VCF file, so need a tab-sep file of the chrom and
+  position of the SNPs to keep in the VCF. i will do this with
+  VCFtools.
+
+- get the chrom and pos from the dadi file:
+
+#+begin_src
+awk '{print $15 "\t" $16}'  autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95.txt
+#+end_src
+
+- run vcftools (v0.1.14):
+
+#+begin_src
+vcftools --vcf autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites.vcf --positions autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95_positions.txt --recode       
+#+end_src
+
+- run my vcf2snp script:
+
+#+begin_src
+#!/usr/bin/perl -w
+use List::Util qw( maxstr );
+
+
+%geno_hash = (
+key1 => 'B04line',key2 => 'B05line',key3 => 'B10line',key4 => 'B11line',key5 => 'B12line',key6 => 'B14line',key7 => 'B23line',key8 => 'B28line',key9 => 'B38line',key10 => 'B42line',key11 => 'B43line',key12 => 'B51line',key13 => 'B52line',key14 => 'B54line',key15 => 'B59line',key16 => 'I01line',key17 => 'I02line',key18 => 'I03line',key19 => 'I04line',key20 => 'I06line',key21 => 'I07line',key22 => 'I13line',key23 => 'I16line',key24 => 'I17line',key25 => 'I22line',key26 => 'I23line',key27 => 'I24line',key28 => 'I26line',key29 => 'I29line',key30 => 'I31line',key31 => 'I33line',key32 => 'I34line',key33 => 'I35line',key34 => 'I38line',key35 => 'N01line',key36 => 'N02line',key37 => 'N03line',key38 => 'N04line',key39 => 'N07line',key40 => 'N10line',key41 => 'N11line',key42 => 'N13line',key43 => 'N14line',key44 => 'N15line',key45 => 'N16line',key46 => 'N17line',key47 => 'N18line',key48 => 'N19line',key49 => 'N22line',key50 => 'N23line',key51 => 'N25line',key52 => 'N29line',key53 => 'N30line',key54 => 'T01line',key55 => 'T04line',key56 => 'T05line',key57 => 'T07line',key58 => 'T09line',key59 => 'T10line',key60 => 'T14Aline',key61 => 'T22Aline',key62 => 'T23line',key63 => 'T24line',key64 => 'T25Aline',key65 => 'T29Aline',key66 => 'T30Aline',key67 => 'T35line',key68 => 'T36Bline',key69 => 'T39line',key70 => 'T43Aline',key71 => 'T45Bline',key72 => 'ZH23line',key73 => 'ZH26line',key74 => 'ZH33line',key75 => 'ZH42line',key76 => 'ZS10line',key77 => 'ZW09line',key78 => 'ZW139line',key79 => 'ZW140line',key80 => 'ZW142line',key81 => 'ZW144line',key82 => 'ZW155line',key83 => 'ZW177line',key84 => 'ZW185line'
+);
+
+
+
+
+
+open (IN, $ARGV[0]) || die("cant open vcf input file\n");
+@pos = ();
+@alleles = ();
+#$invar_sites = 0;
+while (<IN>) {
+    chomp $_;
+	#$i=0;
+    if ($_ !~  m/^#/) {
+        
+        @data = split("\t",$_);
+        $vcf_pos = $data[1];
+        push @pos, $vcf_pos;
+        $vcf_refbase = $data[3];
+        $vcf_altbase = $data[4];
+        $myalleles = $vcf_refbase .'/'. $vcf_altbase;
+        push @alleles, $myalleles;
+        @genotypes = @data[9..$#data];
+       	 
+        # check to see if the site is polymorphic still (after removing individuals)
+        $g_ref = 0;
+        $g_alt = 0;
+        $g_het = 0;
+        $g_mis = 0;
+        $i=0;
+
+        foreach $gt(@genotypes) {
+        
+            #print "geno: ", $gt, "\n";
+            if ( $gt =~ /^0\/0/) { $g = 0; }
+            if ( $gt =~ /^0\/1/) { $g = 1; }
+            if ( $gt =~ /^1\/1/) { $g = 2; }
+            if ( $gt =~ /^\.\/\./) { $g = "-"; }
+            
+            #@geno_string = split("",$gt);
+            if ($g eq "0") {$g_ref++;}
+            if ($g eq "1") {$g_het++;}
+            if ($g eq "2") {$g_alt++;}
+            if ($g eq "-") {$g_mis++;}
+
+            if (defined($g)) {
+                #print $g, "\n";
+                
+                $i++;
+                #print $i, "\n";
+                #@geno_string = split("",$g);
+                $key_id = "key" .''. $i;
+                #print $key_id, "\n";
+                $geno = $geno_hash{$key_id};
+                $geno = $geno .''. $g;
+                #print $geno, "\n";
+                $geno_hash{ $key_id } = $geno;
+                $geno = ();
+                
+            }
+        }
+    }
+}
+
+#### write the file according to adegenet criteria ####
+print ">>>> begin comments - do not remove this line <<<<\n\n";
+
+print "does this get rid of the warning?\n\n";
+
+print ">>>> end comments - do not remove this line <<<<\n";
+
+print ">> position\n";
+print join(" ", @pos), "\n";
+
+print ">> allele\n";
+print join(" ", @alleles), "\n";
+
+print ">> population\n";
+print "Beijing " x  15;
+print "Ithaca " x  19;
+print "Netherlands " x  19;
+print "Tazmania " x  18;
+print "Zimbabwe " x  13;
+print "\n";
+
+#Ithaca Netherlands Tazamania Zimbabwe\n";
+
+print "ploidy\n";
+print "2\n";
+
+print "chromosome\n";
+print "$ARGV[1]\n";
+
+
+for ($j=1;$j<=84;$j++) {
+    $getkey = "key" .''. $j;
+    $data = $geno_hash{$getkey};
+    @dat = split("line",$data);
+    print   "> ", $dat[0], "\n";
+    print $dat[1], "\n";
+}
+#+end_src
+
+
+#+begin_src
+perl VCF_2_adegenet_snp_format.pl autosomal_IBD_Callability_masked_ZW184removed_biallelic_neutral_sites_random_allele_polarized_dadi_input_postprob_anc_above95_positions.vcf
+#+end_src
+
+
+
+
+
+# ######################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # ######################################################
