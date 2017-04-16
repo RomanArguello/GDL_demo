@@ -1,0 +1,69 @@
+---
+title: "DAPC on GDL"
+author: "J. Roman Arguello"
+date: "15 April 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+Running DAPC on the 'neutral' SNP classes for the GDL (Grenier et al. G3, 2015). This provides an initial examination of the structure within and among the five populations for which we have genome sequence.
+
+
+## Loading packages and outputting versions
+```{r}
+
+library("adegenet")
+library("ggplot2")
+library("reshape")
+
+print(sessionInfo())
+
+```
+
+
+## Load the GDL data
+```{r, echo=FALSE}
+GDL_lines<-read.snp("~/Dropbox/fly_demo/DAPC/autosomes_IBD_masked_biallelic_ZW184removed_Callability_masked_biallelic_neutral_sites.snp",multicore=TRUE)
+```
+
+
+## Identify clusters
+```{r}
+GDL_groups <- find.clusters(GDL_lines, max.n.clust=12,choose.n.clust=FALSE, criterion="diffNgroup", n.pca=120)
+```
+
+## Plot groupings
+```{r}
+plot(GDL_groups$Kstat, type="o", xlab="number of clusters (K)", ylab="BIC",col="blue", main="Detection based on BIC")
+points(2, GDL_groups$Kstat[2], pch="x", cex=3)
+```
+
+## Run PCA
+```{r}
+pca_GDL <- glPca(GDL_lines,nf=50,parallel = require("parallel"),n.cores = 3)
+```
+
+## Plot PCA
+```{r, echo=FALSE}
+myCol <- colorplot(pca_GDL$scores,pca_GDL$scores, transp=TRUE, cex=4, alpha=0.8, main="")
+abline(h=0,v=0, col="lightgrey")
+add.scatter.eig(pca_GDL$eig[1:40],2,1,2, posi="bottomleft", inset=0.15, ratio=.2)
+```
+
+## Run DAPC
+```{r}
+dapc_GDL <- dapc(GDL_lines, n.pca=25, n.da=5)
+```
+
+### Plot DAPC
+```{r}
+myCol = c("black","#D55E00","#E69F00","#009E73","#56B4E9")
+scatter(dapc_GDL,1,2, ratio.pca=0.5, bg="white", pch=20, legend=TRUE, cell=2, cstar=1, col=myCol, solid=.7, cex=3, cex.sub=4,clab=0, mstree=FALSE, scree.da=TRUE,posi.da="topleft", ratio=.16)
+```
+
+
